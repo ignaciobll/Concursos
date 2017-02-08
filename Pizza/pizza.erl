@@ -1,4 +1,5 @@
 -module(pizza).
+
 -import(file, [open/2, read_line/1, close/1]).
 -import(lists,[foldl/3, reverse/1, splitwith/2, filter/2, flatten/1, map/2, nth/2]).
 -import(rand, [uniform/1]).
@@ -11,16 +12,16 @@ parser(Name) ->
     [R, C, Min, Max] = string:tokens(H, "x "),
     #{rows => R, columns => C, min => Min, max => Max, pizza => T}.
 
-read_file(IoDevice) -> 
+read_file(IoDevice) ->
     case read_line(IoDevice) of
-	{ok, Data} ->
-	    [_|T] = reverse(Data),
-	    [reverse(T)|read_file(IoDevice)];
-	{error, Reason} -> 
-	    close(IoDevice),
-	    Reason;
-	eof ->
-	    []
+        {ok, Data} ->
+            [_|T] = reverse(Data),
+            [reverse(T)|read_file(IoDevice)];
+        {error, Reason} ->
+            close(IoDevice),
+            Reason;
+        eof ->
+            []
     end.
 
 counter(Input) ->
@@ -32,31 +33,50 @@ match({T, M}, []) -> {T,M};
 match({T, M}, [84|Rest]) -> match({T + 1 , M}, Rest); % 84 = T
 match({T, M}, [77|Rest]) -> match({T , M + 1}, Rest). % 77 = M
 
+ady2(Len, Pos, {N, Gen}) ->
+    #{Pos =>
+          {case (Pos < N) or (Pos == N) of
+               true  -> b;
+               false -> nth(Pos - N, Gen)
+           end,
+           case Pos rem N == 0 of
+               true  -> b;
+               false -> nth(Pos + 1, Gen)
+           end,
+           case Pos rem N == 1 of
+               true  -> b;
+               false -> nth(Pos - 1, Gen)
+           end,
+           case Pos > Len - N of
+               true -> b;
+               false -> nth(Pos + N, Gen)
+           end}
+     }.
 
-ady(Len, Pos, {N, Gen}) when Pos > (Len - N) ->
-    {nth(Pos    , Gen),
-     nth(Pos - N, Gen),
-     nth(Pos - 1, Gen),
-     b};
-ady(_Len, Pos, {N, Gen}) when Pos < N->
-    {nth(Pos    , Gen),
-     b,
-     nth(Pos - 1, Gen),
-     nth(Pos + 1, Gen),
-     nth(Pos + N, Gen)};
-ady(_Len, Pos, {N, Gen}) when Pos rem N == 0 ->
-    {nth(Pos    , Gen),
-     nth(Pos - N, Gen),
-     nth(Pos - 1, Gen),
-     b,
-     nth(Pos + N, Gen)};
-ady(_Len, Pos, {N, Gen}) ->
-    {nth(Pos    , Gen),
-     nth(Pos - N, Gen),
-     nth(Pos - 1, Gen),
-     nth(Pos + 1, Gen),
-     nth(Pos + N, Gen)}.
-    
+ady(Len, Pos, {N, Gen}) ->
+    {nth(Pos, Gen),
+     case (Pos < N) or (Pos == N) of
+	 true  -> b;
+	 false -> nth(Pos - N, Gen)
+     end,
+     case Pos rem N == 0 of
+	 true  -> b;
+	 false -> nth(Pos + 1, Gen)
+     end,
+     case Pos rem N == 1 of
+	 true  -> b;
+	 false -> nth(Pos - 1, Gen)
+     end,
+     case Pos > Len - N of
+	 true -> b;
+	 false -> nth(Pos + N, Gen)
+     end}.
+
+
+generate_groups(Gen={_N, List}) ->
+    Len = length(List),
+    foldl(fun(X, Acc) -> maps:merge(ady2(Len, X, Gen), Acc) end, maps:new(), lists:seq(1, Len)).
+
 
 to_gen(Input) ->
     #{ pizza := Pizza } = Input,
@@ -72,7 +92,3 @@ n_length_chunks(List,Len) when Len > length(List) ->
 n_length_chunks(List,Len) ->
     {Head,Tail} = lists:split(Len,List),
     [Head | n_length_chunks(Tail,Len)].
-
-
-
-
