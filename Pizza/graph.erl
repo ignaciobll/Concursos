@@ -2,12 +2,12 @@
 
 -compile(export_all).
 
--import(lists, [nth/2]).
+-import(lists, [nth/2, map/2, foldl/3]).
 
 ady(Pos, {N, Gen}) ->
     Len = length(Gen),
     #{Pos =>
-          {case (Pos < N) or (Pos == N) of
+          {case (Pos =< N) of
                true  -> b;
                false -> Pos - N
            end,
@@ -40,4 +40,10 @@ is_ady(Pos, ady, to, Node, {N, Gen}) ->
     #{Pos := TupleAdy } = ady(Pos, {N, Gen}),
     lists:member(Node, tuple_to_list(TupleAdy)).
 
-%% explore(Pos, {N, Gen}, List) ->    
+colrow(Pos, N) -> { (Pos div N) + 1, ((Pos-1) rem N) + 1}. % {row, col}
+
+% A set of integer positions.
+well_formed(Set, {N, _Gen}) ->
+    {TLrow, TLcol} = colrow(lists:min(Set), N),
+    {DRrow, DRcol} = colrow(lists:max(Set), N),
+    length(Set) == (DRrow - (TLrow - 1)) * (DRcol -(TLcol - 1)).
